@@ -16,16 +16,26 @@ import type { Simplify } from 'type-fest'
 // コンポーネントのプロパティ型定義
 type ShaderBackgroundProps = Simplify<{
   children: ReactNode // 子要素
+  onToggleAnimation?: (isPlaying: boolean) => void // アニメーション状態変更のコールバック
 }>
 
-export const ShaderBackground = (({ children }) => {
+export const ShaderBackground = (({ children, onToggleAnimation }) => {
   // コンテナ要素への参照
   const containerRef = useRef<HTMLDivElement>(null)
   // マウスホバー状態（現在は未使用だが将来の拡張用）
   const [_, setIsActive] = useState(false)
+  // アニメーション再生状態
+  const [isAnimationPlaying, setIsAnimationPlaying] = useState(true)
   // SVGフィルターのユニークID生成
   const glassEffectId = useId()
   const gooeyFilterId = useId()
+
+  // アニメーション切り替え関数
+  const toggleAnimation = () => {
+    const newState = !isAnimationPlaying
+    setIsAnimationPlaying(newState)
+    onToggleAnimation?.(newState)
+  }
 
   // マウスイベントリスナーの設定
   useEffect(() => {
@@ -109,14 +119,32 @@ export const ShaderBackground = (({ children }) => {
       <MeshGradient
         className={clsx('absolute', 'inset-0', 'w-full', 'h-full')}
         colors={['#e0eaff', '#464cecb5', '#5b8efb', '#abcbde99']}
-        speed={0.3}
+        speed={isAnimationPlaying ? 0.3 : 0}
       />
       {/* 第2層：オーバーレイグラデーション（透明度60%） */}
       <MeshGradient
         className={clsx('absolute inset-0 w-full h-full opacity-60')}
         colors={['#e0eaff', '#464cecb5', '#5b8efb']}
-        speed={0.6}
+        speed={isAnimationPlaying ? 0.6 : 0}
       />
+
+      {/* アニメーション制御ボタン */}
+      <button
+        onClick={toggleAnimation}
+        className={clsx(
+          'fixed top-4 right-4 z-50 px-4 py-2 rounded-lg',
+          'bg-white/20 backdrop-blur-sm border border-white/30',
+          'text-white font-medium transition-all duration-300',
+          'hover:bg-white/30 hover:scale-105',
+          'focus:outline-none focus:ring-2 focus:ring-white/50',
+        )}
+        type="button"
+        aria-label={
+          isAnimationPlaying ? 'アニメーションを停止' : 'アニメーションを再生'
+        }
+      >
+        {isAnimationPlaying ? '⏸️ 停止' : '▶️ 再生'}
+      </button>
 
       {/* 子要素（コンテンツ） */}
       {children}
